@@ -3,7 +3,7 @@ given an Amazon Machine Image (AMI) id.
 
 When would you want to use this plugin?  Well, this plugin would come in handy if you have then need to run builds
 periodically and wish to leverage Amazon EC2 cloud instances to do that work.  Usage should be fairly intuitive,
-simply create a new node of type "EC2 Image Slave".
+simply create a new node of type "EC2 Image Slave".  Open up "slaveConfig.png" for an idea of what it will look like.
 
 This is a maven project.  To build, run:
 $ mvn clean -DskipTests install
