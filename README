@@ -15,7 +15,17 @@ or
 $ mvnDebug hpi:run
 
 TODOs:
+Form Fields
 * add help text to EC2 config fields
 * field verification / more advanced input types for EC2 fields
-* more testing on runaway instance prevention (a slave should not spin up more than one concurrent instance)
+* make EC2 security realm configurable
+* make availability zone configurable
+* writeup wiki documentation on how to prepare EC2 slaves
+
+ETC/Nice to have
+* list any potential runnaway instances (i.e. unbound slaves) and allow user to kill them on the spot
 * possibly support starting of existing (stopped) EC2 instances in addition to AMIs
+* workspace preservation (is there a plugin already for this?)
+
+Testing
+* more testing on runaway instance prevention (a slave should not spin up more than one concurrent instance)
