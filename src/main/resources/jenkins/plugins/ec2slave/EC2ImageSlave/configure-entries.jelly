@@ -52,7 +52,7 @@ THE SOFTWARE.
   
   <!-- In order to display ComputerConnector choices, we might not be able to simply import dumbSlave's description -->
   
-  <f:section title="${%Node Configuration}">
+  <f:section title="${%Slave Process Configuration}">
   
   <!--  below we include config that looks just like dumbslave's config-entries.jelly 
         file but with computerConnector in place of computerLauncher 
