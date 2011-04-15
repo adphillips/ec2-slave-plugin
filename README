@@ -1,1 +1,2 @@
-This is a plugin to the Jenkins CI server that will allow you to setup a build slave to run on Amazon EC2 instance, given an Amazon Machine Image (AMI) id.
+This is a plugin to the Jenkins CI server that will allow you to setup a build slave to run on Amazon EC2 instance, 
+given an Amazon Machine Image (AMI) id.
