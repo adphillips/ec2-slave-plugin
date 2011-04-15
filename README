@@ -10,9 +10,9 @@ $ mvn clean -DskipTests install
 this will yield a proper Jenkins plugin at target/ec2-slave.hpi
 
 You can also test this plugin in an embedded Jenkins by running
-mvn hpi:run
+$ mvn hpi:run
 or
-mvnDebug hpi:run
+$ mvnDebug hpi:run
 
 TODOs:
 * add help text to EC2 config fields
