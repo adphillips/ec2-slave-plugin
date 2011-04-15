@@ -1,2 +1,21 @@
 This is a plugin to the Jenkins CI server that will allow you to setup a build slave to run on Amazon EC2 instance, 
 given an Amazon Machine Image (AMI) id.
+
+When would you want to use this plugin?  Well, this plugin would come in handy if you have then need to run builds
+periodically and wish to leverage Amazon EC2 cloud instances to do that work.  Usage should be fairly intuitive,
+simply create a new node of type "EC2 Image Slave".
+
+This is a maven project.  To build, run:
+$ mvn clean -DskipTests install
+this will yield a proper Jenkins plugin at target/ec2-slave.hpi
+
+You can also test this plugin in an embedded Jenkins by running
+mvn hpi:run
+or
+mvnDebug hpi:run
+
+TODOs:
+* add help text to EC2 config fields
+* field verification / more advanced input types for EC2 fields
+* more testing on runaway instance prevention (a slave should not spin up more than one concurrent instance)
+* possibly support starting of existing (stopped) EC2 instances in addition to AMIs
