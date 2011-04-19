@@ -34,11 +34,22 @@ import hudson.slaves.NodeProperty;
 import hudson.slaves.ComputerLauncher;
 import hudson.slaves.DumbSlave;
 import hudson.slaves.RetentionStrategy;
+import hudson.util.FormValidation;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.logging.Logger;
 
 import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.QueryParameter;
+
+import com.amazonaws.AmazonServiceException;
+import com.amazonaws.auth.AWSCredentials;
+import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.services.ec2.AmazonEC2Client;
+import com.amazonaws.services.ec2.model.DescribeImagesRequest;
+import com.amazonaws.services.ec2.model.DescribeImagesResult;
+import com.amazonaws.services.ec2.model.Image;
 
 /**
  * The {@link EC2ImageSlave} is a slave in the same way {@link DumbSlave} is, i.e.
@@ -56,7 +67,9 @@ import org.kohsuke.stapler.DataBoundConstructor;
 public final class EC2ImageSlave extends Slave {
   private static final long serialVersionUID = -3392496004371742586L;
 
-  private String instanceType, accessKey, imageId, secretKey, keypairName;
+  private static final Logger LOGGER = Logger.getLogger(EC2ImageSlave.class.getName());
+
+  private String instanceType, accessKey, imageId, secretKey, keypairName, securityGroup, availabilityZone;
 
   private transient EC2ImageLaunchWrapper ec2ImageLaunchWrapper;
 
@@ -68,9 +81,10 @@ public final class EC2ImageSlave extends Slave {
 
   @DataBoundConstructor
   public EC2ImageSlave(String secretKey, String accessKey, String imageId, String instanceType, String keypairName,
-      String name, String nodeDescription, String remoteFS, String numExecutors, Mode mode, String labelString,
-      ComputerConnector computerConnector, RetentionStrategy retentionStrategy,
-      List<? extends NodeProperty<?>> nodeProperties) throws FormException, IOException {
+      String securityGroup, String availabilityZone, String name, String nodeDescription, String remoteFS,
+      String numExecutors, Mode mode, String labelString, ComputerConnector computerConnector,
+      RetentionStrategy retentionStrategy, List<? extends NodeProperty<?>> nodeProperties) throws FormException,
+      IOException {
     super(name, nodeDescription, remoteFS, numExecutors, mode, labelString,
         null /* null launcher because we create it dynamically in getLauncher */, retentionStrategy, nodeProperties);
 
@@ -95,6 +109,8 @@ public final class EC2ImageSlave extends Slave {
     this.imageId = imageId;
     this.instanceType = instanceType;
     this.keypairName = keypairName;
+    this.securityGroup = securityGroup;
+    this.availabilityZone = availabilityZone;
   }
 
   @Override
@@ -104,7 +120,7 @@ public final class EC2ImageSlave extends Slave {
     //hostname already set.  This implies that the EC2ImageSlave config will be displaying
     //Computer *Connector* descriptor stuff rather than *Launcher*
     ec2ImageLaunchWrapper = new EC2ImageLaunchWrapper(computerConnector, secretKey, accessKey, imageId, instanceType,
-        keypairName);
+        keypairName, securityGroup, availabilityZone);
 
     setLauncher(ec2ImageLaunchWrapper);
 
@@ -117,15 +133,37 @@ public final class EC2ImageSlave extends Slave {
       return "EC2 Image Slave";
     }
 
-    //		public FormValidation doCheckImageId(@QueryParameter String value, 
-    //				@QueryParameter("secretKey") String secretKey,
-    //				@QueryParameter("accessKey") String accessKey,
-    //				@QueryParameter("instanceType") String instanceType,
-    //				@QueryParameter("keypairName") String keypairName) {
-    //			if(ec2ImageLaunchWrapper
-    //			  if(looksOk(value))  return FormValidation.ok();
-    //			  else                return FormValidation.error("There's a problem here");
-    //			}
+    public FormValidation doTestConnection(@QueryParameter String accessKey, @QueryParameter String secretKey) {
+      try {
+        AWSCredentials credentials = new BasicAWSCredentials(accessKey, secretKey);
+        AmazonEC2Client ec2 = new AmazonEC2Client(credentials);
+        ec2.describeAvailabilityZones();
+        return FormValidation.ok("Success");
+      } catch (AmazonServiceException e) {
+        LOGGER.warning("Failed to check EC2 credential: " + e.getMessage());
+        return FormValidation.error(e.getMessage());
+      }
+    }
+
+    public FormValidation doValidateAmi(@QueryParameter String accessKey, @QueryParameter String secretKey,
+        final @QueryParameter String imageId) {
+      
+      FormValidation val = doTestConnection(accessKey, secretKey);
+      if(val.kind == FormValidation.Kind.ERROR) {
+        return val;
+      }
+      
+      AWSCredentials credentials = new BasicAWSCredentials(accessKey, secretKey);
+      AmazonEC2Client ec2 = new AmazonEC2Client(credentials);
+      DescribeImagesResult res = ec2.describeImages(new DescribeImagesRequest().withImageIds(imageId));
+      
+      if (res.getImages().size() > 0 && res.getImages().get(0).getImageId().equals(imageId)) {
+        Image image = res.getImages().get(0);
+        return FormValidation.ok("manifest: "+image.getImageLocation() +"\ndescription: " + image.getDescription());
+      } else {
+          return FormValidation.error("No such AMI: " + imageId);
+      }
+    }
 
     public static List<Descriptor<ComputerConnector>> getComputerConnectorDescriptors() {
       return Hudson.getInstance().<ComputerConnector, Descriptor<ComputerConnector>> getDescriptorList(
@@ -151,6 +189,14 @@ public final class EC2ImageSlave extends Slave {
 
   public String getKeypairName() {
     return keypairName;
+  }
+
+  public String getAvailabilityZone() {
+    return availabilityZone;
+  }
+
+  public String getSecurityGroup() {
+    return securityGroup;
   }
 
   public ComputerConnector getComputerConnector() {

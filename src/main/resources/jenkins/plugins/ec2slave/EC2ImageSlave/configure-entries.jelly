@@ -29,7 +29,7 @@ THE SOFTWARE.
          
   <f:section title="${%EC2 Configuration}">
 
-      <f:entry title="${%Access Key}" field="accessKey">
+      <f:entry title="${%Access Key ID}" field="accessKey">
         <f:textbox />
       </f:entry>
 		
@@ -37,9 +37,13 @@ THE SOFTWARE.
           <f:password />
       </f:entry>
       
+      <!-- f:validateButton title="${%Test Connection}" progress="${%Testing...}" method="testConnection" with="secretKey,accessKey" /-->
+      
       <f:entry title="${%AMI}" field="imageId">
         <f:textbox />
       </f:entry>
+      
+      <f:validateButton title="${%Check AMI}" progress="${%Checking...}" method="validateAmi" with="secretKey,accessKey,imageId" />
       
       <f:entry title="${%Instance Type}" field="instanceType">
         <f:textbox />
@@ -48,11 +52,25 @@ THE SOFTWARE.
       <f:entry title="${%Keypair Name}" field="keypairName">
         <f:textbox />
       </f:entry>
+      
+      <f:advanced>
+      
+        <f:entry title="${%Security Group}" field="securityGroup">
+          <f:textbox />
+        </f:entry>
+      
+        <f:entry title="${%Availability Zone}" field="availabilityZone">
+          <f:textbox />
+        </f:entry>
+      
+      </f:advanced>
+      
+      <!-- f:validateButton title="${%Check AMI}" progress="${%Checking...}" method="validateAmi" with="secretKey,accessId,region,ami" /-->
   </f:section>
   
   <!-- In order to display ComputerConnector choices, we might not be able to simply import dumbSlave's description -->
   
-  <f:section title="${%Slave Process Configuration}">
+  <f:section title="${%Jenkins Slave Configuration}">
   
   <!--  below we include config that looks just like dumbslave's config-entries.jelly 
         file but with computerConnector in place of computerLauncher 

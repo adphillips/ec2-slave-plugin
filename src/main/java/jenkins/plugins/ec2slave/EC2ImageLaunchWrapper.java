@@ -37,19 +37,28 @@ import hudson.slaves.SlaveComputer;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Logger;
+
+import org.apache.commons.lang.StringUtils;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.ec2.AmazonEC2Client;
+import com.amazonaws.services.ec2.model.AvailabilityZone;
+import com.amazonaws.services.ec2.model.DescribeAvailabilityZonesResult;
 import com.amazonaws.services.ec2.model.DescribeInstancesRequest;
+import com.amazonaws.services.ec2.model.DescribeSecurityGroupsResult;
 import com.amazonaws.services.ec2.model.Instance;
 import com.amazonaws.services.ec2.model.InstanceStateName;
+import com.amazonaws.services.ec2.model.Placement;
 import com.amazonaws.services.ec2.model.Reservation;
 import com.amazonaws.services.ec2.model.RunInstancesRequest;
 import com.amazonaws.services.ec2.model.RunInstancesResult;
+import com.amazonaws.services.ec2.model.SecurityGroup;
 import com.amazonaws.services.ec2.model.TerminateInstancesRequest;
 
 /**
@@ -73,7 +82,11 @@ public class EC2ImageLaunchWrapper extends ComputerLauncher {
   private String ami;
 
   private String instanceType;
-
+  
+  private String securityGroup;
+  
+  private String availabilityZone;
+  
   private String keypairName;
 
   private int retryIntervalSeconds = 10;
@@ -93,12 +106,14 @@ public class EC2ImageLaunchWrapper extends ComputerLauncher {
   private transient boolean preLaunchOk = false;
 
   public EC2ImageLaunchWrapper(ComputerConnector computerConnector, String secretKey, String accessKey, String ami,
-      String instanceType, String keypairName) {
+      String instanceType, String keypairName, String securityGroup, String availabilityZone) {
     this.ami = ami;
     this.computerConnector = computerConnector;
     // TODO: make a combobox for instance type in the slave config
     this.instanceType = instanceType;
     this.keypairName = keypairName;
+    this.securityGroup = securityGroup;
+    this.availabilityZone = availabilityZone;
 
     AWSCredentials credentials = new BasicAWSCredentials(accessKey, secretKey);
     ec2 = new AmazonEC2Client(credentials);
@@ -109,7 +124,18 @@ public class EC2ImageLaunchWrapper extends ComputerLauncher {
   //
   protected String launchInstanceFromImage() {
     RunInstancesRequest req = new RunInstancesRequest().withImageId(ami).withInstanceType(instanceType)
-        .withKeyName(keypairName).withSecurityGroups("default").withMinCount(1).withMaxCount(1);
+        .withKeyName(keypairName).withMinCount(1).withMaxCount(1);
+    
+    if(!StringUtils.isEmpty(securityGroup)) {
+      req.withSecurityGroups(securityGroup);
+    } else {
+      req.withSecurityGroups("default");
+    }
+    
+    if(!StringUtils.isEmpty(availabilityZone)) {
+      req.setPlacement(new Placement(availabilityZone));
+    }
+
     RunInstancesResult res = ec2.runInstances(req);
     Reservation rvn = res.getReservation();
 
@@ -135,6 +161,24 @@ public class EC2ImageLaunchWrapper extends ComputerLauncher {
       return;
 
     ec2.terminateInstances(new TerminateInstancesRequest().withInstanceIds(curInstanceId));
+  }
+  
+  public List<String> getAvailabilityZones() {
+    DescribeAvailabilityZonesResult res = ec2.describeAvailabilityZones();
+    ArrayList<String> ret = new ArrayList<String>();
+    for(AvailabilityZone z : res.getAvailabilityZones()) {
+      ret.add(z.getZoneName());
+    }
+    return ret;
+  }
+  
+  public List<String> getSecurityGroups() {
+    DescribeSecurityGroupsResult res = ec2.describeSecurityGroups();
+    ArrayList<String> ret = new ArrayList<String>();
+    for(SecurityGroup s : res.getSecurityGroups()) {
+      ret.add(s.getGroupName());
+    }
+    return ret;
   }
 
   //
