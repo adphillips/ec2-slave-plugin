@@ -16,10 +16,8 @@ $ mvnDebug hpi:run
 
 TODOs:
 Form Fields
-* add help text to EC2 config fields
-* field verification / more advanced input types for EC2 fields
-* make EC2 security realm configurable
-* make availability zone configurable
+* add help text to fields
+* field verification / more advanced input types for fields
 * writeup wiki documentation on how to prepare EC2 slaves
 
 ETC/Nice to have
