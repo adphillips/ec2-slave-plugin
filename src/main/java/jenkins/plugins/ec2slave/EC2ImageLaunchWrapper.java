@@ -136,6 +136,9 @@ public class EC2ImageLaunchWrapper extends ComputerLauncher {
       req.setPlacement(new Placement(availabilityZone));
     }
 
+    // Defaults to just stopping, when we're done with our slaves, we're done
+    req.setInstanceInitiatedShutdownBehavior("terminate");
+
     RunInstancesResult res = ec2.runInstances(req);
     Reservation rvn = res.getReservation();
 
