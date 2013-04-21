@@ -5,6 +5,17 @@ When would you want to use this plugin?  Well, this plugin would come in handy i
 periodically and wish to leverage Amazon EC2 cloud instances to do that work.  Usage should be fairly intuitive,
 simply create a new node of type "EC2 Image Slave".  Open up "slaveConfig.png" for an idea of what it will look like.
 
+
+Differs from original EC2 plugin whose intent was dynamic allocation of X number of instances from stock AMIs 
+on demand.  It is based on the idea of Ephemeral nodes.
+
+The purpose of the new plugin is to be able to configure an EC2 node in the same way you do all other nodes 
+in Jenkins.  This would allow much more flexibility on launching techniques and allow windows instances to work.
+
+• no need for a specialized EC2 launcher, Jenkins built-ins are fine
+• only starts and stops EC2 instances, useful when you have preconfigured AMIs but don't want them running all the time (not same as dynamic provisioning)
+
+
 This is a maven project.  To build, run:
 $ mvn clean -DskipTests install
 this will yield a proper Jenkins plugin at target/ec2-slave.hpi
